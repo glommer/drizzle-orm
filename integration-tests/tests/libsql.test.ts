@@ -6,6 +6,7 @@ import { sql } from 'drizzle-orm';
 import type { DrizzleLibSQLDatabase } from 'drizzle-orm/libsql';
 import { Client, createClient } from '@libsql/client';
 import { drizzle } from 'drizzle-orm/libsql';
+import { alias, blob, integer, primaryKey, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
 const ENABLE_LOGGING = false;
 
@@ -13,6 +14,14 @@ interface Context {
 	client: Client;
 	db: DrizzleLibSQLDatabase;
 }
+
+const usersTable = sqliteTable('users', {
+	id: integer('id').primaryKey(),
+	name: text('name').notNull(),
+	verified: integer('verified').notNull().default(0),
+	json: blob<string[]>('json', { mode: 'json' }),
+	createdAt: integer('created_at', { mode: 'timestamp' }).notNull().defaultNow(),
+});
 
 const test = anyTest as TestFn<Context>;
 
@@ -53,9 +62,10 @@ test.after.always(async (t) => {
 
 test.beforeEach(async (t) => {
 	const ctx = t.context;
+	await ctx.db.run(sql`drop table if exists ${usersTable}`);
 	await ctx.db.run(
-		sql`create table users (
-			id int,
+		sql`create table ${usersTable} (
+			id int primary key,
 			name text not null
 		)`,
 	);
