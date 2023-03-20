@@ -1,8 +1,8 @@
 /// <reference types="@cloudflare/workers-types" />
 
-import type { Client, ResultSet } from '@libsql/client';
+import type { Client, ResultSet, SqlValue } from '@libsql/client';
 import { Logger, NoopLogger } from '~/logger';
-import type { fillPlaceholders, Query } from '~/sql';
+import { fillPlaceholders, Query } from '~/sql';
 import type { SQLiteAsyncDialect } from '~/sqlite-core/dialect';
 import type { SelectFieldsOrdered } from '~/sqlite-core/query-builders/select.types';
 import {
@@ -52,14 +52,15 @@ export class PreparedQuery<T extends PreparedQueryConfig = PreparedQueryConfig> 
 		super();
 	}
 
-	run(placeholderValues?: Record<string, unknown>): Promise<ResultSet> {
-		// TODO: params
-		return this.client.execute(this.queryString);
+	async run(placeholderValues?: Record<string, unknown>): Promise<ResultSet> {
+		const params = fillPlaceholders(this.params, placeholderValues ?? {});
+		return await this.client.execute(this.queryString, params as SqlValue[]);
 	}
 
-	all(placeholderValues?: Record<string, unknown>): Promise<T['all']> {
-		// TODO
-		throw new Error('all() not implemented');
+	async all(placeholderValues?: Record<string, unknown>): Promise<T['all']> {
+		const params = fillPlaceholders(this.params, placeholderValues ?? {});
+		const results = await this.client.execute(this.queryString, params as SqlValue[]);
+		return results.rows as unknown[];
 	}
 
 	get(placeholderValues?: Record<string, unknown>): Promise<T['get']> {
