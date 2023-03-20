@@ -1,6 +1,6 @@
 /// <reference types="@cloudflare/workers-types" />
 
-import { Client, ResultSet } from '@libsql/client';
+import type { Client, ResultSet } from '@libsql/client';
 import { DefaultLogger, Logger } from '~/logger';
 import { BaseSQLiteDatabase } from '~/sqlite-core/db';
 import { SQLiteAsyncDialect } from '~/sqlite-core/dialect';

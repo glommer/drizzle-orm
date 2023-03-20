@@ -6,6 +6,7 @@ import { sql } from 'drizzle-orm';
 import { asc, eq, gt, inArray } from 'drizzle-orm/expressions';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { drizzle } from 'drizzle-orm/node-postgres';
+import type { DrizzleLibSQLDatabase } from 'drizzle-orm/libsql';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import type { AnyPgColumn, InferModel } from 'drizzle-orm/pg-core';
 import {

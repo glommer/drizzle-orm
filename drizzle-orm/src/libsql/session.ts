@@ -1,10 +1,10 @@
 /// <reference types="@cloudflare/workers-types" />
 
-import { Client, ResultSet } from '@libsql/client';
+import type { Client, ResultSet } from '@libsql/client';
 import { Logger, NoopLogger } from '~/logger';
-import { fillPlaceholders, Query } from '~/sql';
-import { SQLiteAsyncDialect } from '~/sqlite-core/dialect';
-import { SelectFieldsOrdered } from '~/sqlite-core/query-builders/select.types';
+import type { fillPlaceholders, Query } from '~/sql';
+import type { SQLiteAsyncDialect } from '~/sqlite-core/dialect';
+import type { SelectFieldsOrdered } from '~/sqlite-core/query-builders/select.types';
 import {
 	PreparedQuery as PreparedQueryBase,
 	PreparedQueryConfig as PreparedQueryConfigBase,
