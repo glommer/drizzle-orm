@@ -53,6 +53,7 @@ export class PreparedQuery<T extends PreparedQueryConfig = PreparedQueryConfig> 
 	}
 
 	run(placeholderValues?: Record<string, unknown>): Promise<ResultSet> {
+		console.log(this.queryString);
 		// TODO: params
 		return this.client.execute(this.queryString);
 	}
