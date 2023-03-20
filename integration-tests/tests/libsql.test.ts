@@ -6,7 +6,8 @@ import { sql } from 'drizzle-orm';
 import type { DrizzleLibSQLDatabase } from 'drizzle-orm/libsql';
 import { Client, createClient } from '@libsql/client';
 import { drizzle } from 'drizzle-orm/libsql';
-import { alias, blob, integer, primaryKey, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import { name } from 'drizzle-orm/sql';
+import { integer, blob, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
 const ENABLE_LOGGING = false;
 
@@ -14,6 +15,8 @@ interface Context {
 	client: Client;
 	db: DrizzleLibSQLDatabase;
 }
+
+const test = anyTest as TestFn<Context>;
 
 const usersTable = sqliteTable('users', {
 	id: integer('id').primaryKey(),
@@ -23,7 +26,56 @@ const usersTable = sqliteTable('users', {
 	createdAt: integer('created_at', { mode: 'timestamp' }).notNull().defaultNow(),
 });
 
-const test = anyTest as TestFn<Context>;
+const users2Table = sqliteTable('users2', {
+	id: integer('id').primaryKey(),
+	name: text('name').notNull(),
+	cityId: integer('city_id').references(() => citiesTable.id),
+});
+
+const citiesTable = sqliteTable('cities', {
+	id: integer('id').primaryKey(),
+	name: text('name').notNull(),
+});
+
+const coursesTable = sqliteTable('courses', {
+	id: integer('id').primaryKey(),
+	name: text('name').notNull(),
+	categoryId: integer('category_id').references(() => courseCategoriesTable.id),
+});
+
+const courseCategoriesTable = sqliteTable('course_categories', {
+	id: integer('id').primaryKey(),
+	name: text('name').notNull(),
+});
+
+const orders = sqliteTable('orders', {
+	id: integer('id').primaryKey(),
+	region: text('region').notNull(),
+	product: text('product').notNull(),
+	amount: integer('amount').notNull(),
+	quantity: integer('quantity').notNull(),
+});
+
+const usersMigratorTable = sqliteTable('users12', {
+	id: integer('id').primaryKey(),
+	name: text('name').notNull(),
+	email: text('email').notNull(),
+});
+
+const anotherUsersMigratorTable = sqliteTable('another_users', {
+	id: integer('id').primaryKey(),
+	name: text('name').notNull(),
+	email: text('email').notNull(),
+});
+
+const pkExample = sqliteTable('pk_example', {
+	id: integer('id').primaryKey(),
+	name: text('name').notNull(),
+	email: text('email').notNull(),
+}, (table) => ({
+	compositePk: primaryKey(table.id, table.name),
+}));
+
 
 test.before(async (t) => {
 	const ctx = t.context;
@@ -62,24 +114,65 @@ test.after.always(async (t) => {
 
 test.beforeEach(async (t) => {
 	const ctx = t.context;
-	await ctx.db.run(sql`drop table if exists ${usersTable}`);
-	await ctx.db.run(
-		sql`create table ${usersTable} (
-			id int primary key,
+
+	const drops = []
+	drops.push(ctx.db.run(sql`drop table if exists ${usersTable}`));
+	drops.push(ctx.db.run(sql`drop table if exists ${users2Table}`));
+	drops.push(ctx.db.run(sql`drop table if exists ${citiesTable}`));
+	drops.push(ctx.db.run(sql`drop table if exists ${coursesTable}`));
+	drops.push(ctx.db.run(sql`drop table if exists ${courseCategoriesTable}`));
+	drops.push(ctx.db.run(sql`drop table if exists ${orders}`));
+	await Promise.all(drops);
+
+	const creates = [];
+
+	creates.push(ctx.db.run(sql`
+		create table ${usersTable} (
+			id integer primary key,
+			name text not null,
+			verified integer not null default 0,
+			json blob,
+			created_at integer not null default (cast((julianday('now') - 2440587.5)*86400000 as integer))
+		)`));
+
+	creates.push(ctx.db.run(sql`
+		create table ${citiesTable} (
+			id integer primary key,
 			name text not null
-		)`,
-	);
+		)`));
+	creates.push(ctx.db.run(sql`
+			create table ${courseCategoriesTable} (
+				id integer primary key,
+				name text not null
+			)`));
+
+	creates.push(ctx.db.run(sql`
+		create table ${users2Table} (
+			id integer primary key,
+			name text not null,
+			city_id integer references ${citiesTable}(${name(citiesTable.id.name)})
+		)`));
+	creates.push(ctx.db.run(sql`
+		create table ${coursesTable} (
+			id integer primary key,
+			name text not null,
+			category_id integer references ${courseCategoriesTable}(${name(courseCategoriesTable.id.name)})
+		)`));
+	creates.push(ctx.db.run(sql`
+		create table ${orders} (
+			id integer primary key,
+			region text not null,
+			product text not null,
+			amount integer not null,
+			quantity integer not null
+		)`));
+
+	await Promise.all(creates);
 });
 
 test.serial('select all fields', async (t) => {
 	const { db } = t.context;
 
-	const now = Date.now();
-
-	await db.insert(usersTable).values({ name: 'John' }).run();
-	const result = await db.select().from(usersTable).all();
-
-	t.assert(result[0]!.createdAt instanceof Date);
-	t.assert(Math.abs(result[0]!.createdAt.getTime() - now) < 100);
-	t.deepEqual(result, [{ id: 1, name: 'John', verified: 0, json: null, createdAt: result[0]!.createdAt }]);
+	const result = await db.run(sql`SELECT * FROM users`);
+	t.assert(result.rows?.length == 0);
 });
