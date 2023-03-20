@@ -59,16 +59,16 @@ export class PreparedQuery<T extends PreparedQueryConfig = PreparedQueryConfig> 
 
 	all(placeholderValues?: Record<string, unknown>): Promise<T['all']> {
 		// TODO
-		throw new Error('Not implemented');
+		throw new Error('all() not implemented');
 	}
 
 	get(placeholderValues?: Record<string, unknown>): Promise<T['get']> {
 		// TODO
-		throw new Error('Not implemented');
+		throw new Error('get() not implemented');
 	}
 
 	values<T extends any[] = unknown[]>(placeholderValues?: Record<string, unknown>): Promise<T[]> {
 		// TODO
-		throw new Error('Not implemented');
+		throw new Error('values() not implemented');
 	}
 }
