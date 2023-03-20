@@ -74,6 +74,12 @@ test.beforeEach(async (t) => {
 test.serial('select all fields', async (t) => {
 	const { db } = t.context;
 
-	const result = await db.run(sql`SELECT * FROM users`);
-	t.assert(result.rows?.length == 0);
+	const now = Date.now();
+
+	await db.insert(usersTable).values({ name: 'John' }).run();
+	const result = await db.select().from(usersTable).all();
+
+	t.assert(result[0]!.createdAt instanceof Date);
+	t.assert(Math.abs(result[0]!.createdAt.getTime() - now) < 100);
+	t.deepEqual(result, [{ id: 1, name: 'John', verified: 0, json: null, createdAt: result[0]!.createdAt }]);
 });
